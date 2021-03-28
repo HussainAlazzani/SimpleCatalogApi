@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Catalog.Dtos;
 using Catalog.Models;
 using Catalog.Repository;
@@ -21,10 +22,10 @@ namespace Catalog.Controllers
 
         // GET /items
         [HttpGet]
-        public IEnumerable<ItemDto> GetItems()
+        public async Task<IEnumerable<ItemDto>> GetItemsAsync()
         {
             // Get items from repository then copy each item to the DTO object.
-            var items = _repository.GetItems()
+            var items = (await _repository.GetItemsAsync())
                 .Select(item => item.AsDto());
 
             return items;
@@ -32,9 +33,9 @@ namespace Catalog.Controllers
 
         // GET /items/{id}
         [HttpGet("{id}")]
-        public ActionResult<ItemDto> GetItem(Guid id)
+        public async Task<ActionResult<ItemDto>> GetItemAsync(Guid id)
         {
-            var item = _repository.GetItem(id);
+            var item = await _repository.GetItemAsync(id);
             if (item is null)
             {
                 return NotFound();
@@ -45,7 +46,7 @@ namespace Catalog.Controllers
 
         // POST /items
         [HttpPost]
-        public ActionResult<ItemDto> CreateItem(CreateItemDto itemDto)
+        public async Task<ActionResult<ItemDto>> CreateItemAsync(CreateItemDto itemDto)
         {
             var item = new Item
             {
@@ -55,17 +56,19 @@ namespace Catalog.Controllers
                 CreatedDate = DateTimeOffset.UtcNow
             };
 
-            _repository.CreateItem(item);
+            await _repository.CreateItemAsync(item);
 
             // For create operations, the convention is to return information about the newly created item.
-            return CreatedAtAction(nameof(GetItem), new { id = item.Id }, item.AsDto());
+            // Note, .NET overrides the async suffix from nameof(GetItemAsync). 
+            // You must disable this feature in Startup by making that option false inside AddControllers().
+            return CreatedAtAction(nameof(GetItemAsync), new { id = item.Id }, item.AsDto());
         }
 
         // PUT /items/{id}
         [HttpPut("{id}")]
-        public ActionResult UpdateItem(Guid id, UpdateItemDto newItem)
+        public async Task<ActionResult> UpdateItemAsync(Guid id, UpdateItemDto newItem)
         {
-            var oldItem = _repository.GetItem(id);
+            var oldItem = await _repository.GetItemAsync(id);
 
             if (oldItem is null)
             {
@@ -79,7 +82,7 @@ namespace Catalog.Controllers
                 Price = newItem.Price,
             };
 
-            _repository.UpdateItem(item);
+            await _repository.UpdateItemAsync(item);
 
             // For update operations, the convention is to return no content.
             return NoContent();
@@ -87,16 +90,16 @@ namespace Catalog.Controllers
 
         // DELETE /items/{id}
         [HttpDelete("{id}")]
-        public ActionResult RemoveItem(Guid id)
+        public async Task<ActionResult> RemoveItemAsync(Guid id)
         {
-            var item = _repository.GetItem(id);
+            var item = await _repository.GetItemAsync(id);
 
             if(item is null)
             {
                 return NotFound();
             }
             
-            _repository.RemoveItem(id);
+            await _repository.RemoveItemAsync(id);
             
             return NoContent();
         }

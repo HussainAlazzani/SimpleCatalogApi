@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Catalog.Models;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Catalog.Repository
 {
@@ -32,31 +33,43 @@ namespace Catalog.Repository
             }
         };
 
-        public IEnumerable<Item> GetItems()
+        public async Task<IEnumerable<Item>> GetItemsAsync()
         {
-            return items;
+            // Since we don't have anything to call, we simply wrap our
+            // collection inside a task.
+            return await Task.FromResult(items);
         }
 
-        public Item GetItem(Guid id)
+        public async Task<Item> GetItemAsync(Guid id)
         {
-            return items.Where(item => item.Id == id).SingleOrDefault();
+            var item = items.Where(item => item.Id == id).SingleOrDefault();
+            return await Task.FromResult(item);
         }
 
-        public void CreateItem(Item item)
+        public async Task CreateItemAsync(Item item)
         {
             items.Add(item);
+
+            // We have nothing to return so we simply trigger a completed task.
+            await Task.CompletedTask;
         }
 
-        public void UpdateItem(Item newItem)
+        public async Task UpdateItemAsync(Item newItem)
         {
             var index = items.FindIndex(oldItem => oldItem.Id == newItem.Id);
             items[index] = newItem;
+
+            // We have nothing to return so we simply trigger a completed task.
+            await Task.CompletedTask;
         }
 
-        public void RemoveItem(Guid id)
+        public async Task RemoveItemAsync(Guid id)
         {
             var index = items.FindIndex(item => item.Id == id);
             items.RemoveAt(index);
+
+            // We have nothing to return so we simply trigger a completed task.
+            await Task.CompletedTask;
         }
     }
 }

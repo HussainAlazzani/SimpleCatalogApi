@@ -33,7 +33,13 @@ namespace Catalog
         public void ConfigureServices(IServiceCollection services)
         {
 
-            services.AddControllers();
+            services.AddControllers( options =>
+            {
+                // This overrides the .NET feature that removes the Async suffix from method names.
+                // Eg when using nameof(GetItemAsync) it becomes GetItem!
+                options.SuppressAsyncSuffixInActionNames = false;
+            });
+
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Catalog", Version = "v1" });

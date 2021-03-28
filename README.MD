@@ -1,0 +1,1 @@
+A simple catalog api that connects to a mongoDB.
