@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Mime;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Catalog.Configurations;
 using Catalog.Repository;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -32,13 +35,23 @@ namespace Catalog
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            var mongoDbConfig = Configuration.GetSection(nameof(MongoDbConfigurations)).Get<MongoDbConfigurations>();
 
-            services.AddControllers( options =>
-            {
-                // This overrides the .NET feature that removes the Async suffix from method names.
-                // Eg when using nameof(GetItemAsync) it becomes GetItem!
-                options.SuppressAsyncSuffixInActionNames = false;
-            });
+            services.AddControllers(options =>
+           {
+               // This overrides the .NET feature that removes the Async suffix from method names.
+               // Eg when using nameof(GetItemAsync) it becomes GetItem!
+               options.SuppressAsyncSuffixInActionNames = false;
+           });
+
+            // This will check the health of out ASP.Net app, as well as the health of
+            // database dependency. A timeout is set for 3 seconds.
+            services.AddHealthChecks()
+                .AddMongoDb(
+                    mongoDbConfig.ConnectionString,
+                    name: "mongodb",
+                    timeout: TimeSpan.FromSeconds(3),
+                    tags: new[] { "ready" });
 
             services.AddSwaggerGen(c =>
             {
@@ -53,8 +66,7 @@ namespace Catalog
             services.AddSingleton<IItemsRepository, MongoDbItemsRepository>();
             services.AddSingleton<IMongoClient>(ServiceProvider =>
             {
-                var config = Configuration.GetSection(nameof(MongoDbConfigurations)).Get<MongoDbConfigurations>();
-                return new MongoClient(config.ConnectionString);
+                return new MongoClient(mongoDbConfig.ConnectionString);
             });
 
 
@@ -79,6 +91,40 @@ namespace Catalog
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+
+                // Adding two endpoints to check the health of our service
+                // 1. checks if the service is ready to receive requests
+                // 2. checks if the system is live
+                endpoints.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+                {
+                    Predicate = check => check.Tags.Contains("ready"),
+
+                    // The following gives a more detailed response in Json format
+                    ResponseWriter = async (context, report) =>
+                    {
+                        var result = JsonSerializer.Serialize(
+                            new {
+                                status = report.Status.ToString(),
+                                checks = report.Entries.Select(entry => new
+                                {
+                                    name = entry.Key,
+                                    status = entry.Value.Status.ToString(),
+                                    exception = entry.Value.Exception != null?entry.Value.Exception.Message : "none",
+                                    duration = entry.Value.Duration.ToString()
+                                })
+                            }
+                        );
+
+                        // Render the json message when we request a "ready" health check
+                        context.Response.ContentType = MediaTypeNames.Application.Json;
+                        await context.Response.WriteAsync(result);
+                    }
+                });
+
+                endpoints.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+                {
+                    Predicate = (_) => false
+                });
             });
         }
     }
