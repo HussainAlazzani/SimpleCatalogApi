@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Catalog.Models;
+using Catalog.Api.Models;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
-namespace Catalog.Repository
+namespace Catalog.Api.Repository
 {
     public class MongoDbItemsRepository : IItemsRepository
     {

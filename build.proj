@@ -1,0 +1,7 @@
+<!-- Must also change the args in the tasks.json file to
+point to this build.proj so that vscode runs it -->
+<Project Sdk="Microsoft.Build.Traversal/3.0.3">
+    <ItemGroup>
+        <ProjectReference Include="**\*.*proj"/>
+    </ItemGroup>
+</Project>

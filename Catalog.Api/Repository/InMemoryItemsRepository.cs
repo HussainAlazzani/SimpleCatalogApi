@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
-using Catalog.Models;
+using Catalog.Api.Models;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Catalog.Repository
+namespace Catalog.Api.Repository
 {
     public class InMemoryItemsRepository : IItemsRepository
     {

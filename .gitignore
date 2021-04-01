@@ -1,5 +1,6 @@
 # Ignore these directories
-/bin
-/obj
-/.vscode
+bin/
+obj/
+.vscode/
+
 

@@ -4,8 +4,8 @@ using System.Linq;
 using System.Net.Mime;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Catalog.Configurations;
-using Catalog.Repository;
+using Catalog.Api.Configurations;
+using Catalog.Api.Repository;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -21,7 +21,7 @@ using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 
-namespace Catalog
+namespace Catalog.Api
 {
     public class Startup
     {
