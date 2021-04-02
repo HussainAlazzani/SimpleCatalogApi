@@ -6,6 +6,7 @@ using Catalog.Api.Dtos;
 using Catalog.Api.Models;
 using Catalog.Api.Repository;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace Catalog.Api.Controllers
 {
@@ -13,10 +14,12 @@ namespace Catalog.Api.Controllers
     [Route("[controller]")]
     public class ItemsController : ControllerBase
     {
+        private readonly ILogger _logger;
         private readonly IItemsRepository _repository;
 
-        public ItemsController(IItemsRepository repository)
+        public ItemsController(ILogger logger, IItemsRepository repository)
         {
+            _logger = logger;
             _repository = repository;
         }
 
@@ -27,6 +30,8 @@ namespace Catalog.Api.Controllers
             // Get items from repository then copy each item to the DTO object.
             var items = (await _repository.GetItemsAsync())
                 .Select(item => item.AsDto());
+
+            _logger.LogInformation($"Fetched items from database at: " + DateTime.UtcNow.ToString("hh:mm:ss"));
 
             return items;
         }
@@ -41,7 +46,7 @@ namespace Catalog.Api.Controllers
                 return NotFound();
             }
 
-            return Ok(item.AsDto());
+            return item.AsDto();
         }
 
         // POST /items
@@ -52,6 +57,7 @@ namespace Catalog.Api.Controllers
             {
                 Id = Guid.NewGuid(),
                 Name = itemDto.Name,
+                Description = itemDto.Description,
                 Price = itemDto.Price,
                 CreatedDate = DateTimeOffset.UtcNow
             };
@@ -75,14 +81,10 @@ namespace Catalog.Api.Controllers
                 return NotFound();
             }
 
-            // Copying to the existing item. Old Id and CreatedDate won't change.
-            var item = oldItem with
-            {
-                Name = newItem.Name,
-                Price = newItem.Price,
-            };
+            oldItem.Name = newItem.Name;
+            oldItem.Price = newItem.Price;
 
-            await _repository.UpdateItemAsync(item);
+            await _repository.UpdateItemAsync(oldItem);
 
             // For update operations, the convention is to return no content.
             return NoContent();
